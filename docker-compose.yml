@@ -1,0 +1,16 @@
+services:
+
+  json-server:
+    image: vimagick/json-server
+    command: -h 0.0.0.0 -p 8080 /config/db.json
+    stop_grace_period: 1s
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/config
+
+  tcpdump:
+    image: alpine
+    command: sh -c "apk add --no-cache ngrep && ngrep -l -s 200000 -d any -W byline -q -t '^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS) ' port 8080"
+    network_mode: "service:json-server"
+    stop_grace_period: 1s
