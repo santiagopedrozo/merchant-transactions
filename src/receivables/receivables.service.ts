@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Receivable } from './entities/receivable.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {EntityManager, Repository} from 'typeorm';
 import { CreateReceivableDto } from './dto/create-receivable.dto';
 
 @Injectable()
@@ -11,7 +11,9 @@ export class ReceivablesService {
     private readonly receivableRepository: Repository<Receivable>,
   ) {}
 
-  async create(dto: CreateReceivableDto): Promise<Receivable> {
+  async create(dto: CreateReceivableDto, manager?: EntityManager): Promise<Receivable> {
+    const repo = manager?.getRepository(Receivable) ?? this.receivableRepository;
+
     const receivable = new Receivable();
 
     receivable.status = dto.status;
@@ -21,7 +23,7 @@ export class ReceivablesService {
     receivable.total = dto.total;
     receivable.transactionId = dto.transactionId;
 
-    return this.receivableRepository.save(receivable);
+    return repo.save(receivable);
   }
 
   async getReceivablesByMerchant(merchantId: number): Promise<Receivable[]> {

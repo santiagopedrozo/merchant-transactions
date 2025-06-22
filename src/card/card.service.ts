@@ -1,7 +1,7 @@
 import {BadRequestException, Injectable} from '@nestjs/common';
 import { Card, CardMethod } from './entities/card.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {EntityManager, Repository} from 'typeorm';
 import { CreateCardDto } from './dto/create-card.dto';
 import { ReceivableStatus } from '../receivables/entities/receivable.entity';
 import { BillingCalculationResultDto } from './dto/billing-calculation-result.dto';
@@ -13,10 +13,12 @@ export class CardService {
     private readonly cardRepository: Repository<Card>,
   ) {}
 
-  async createOrFind(dto: CreateCardDto): Promise<Card> {
+  async createOrFind(dto: CreateCardDto, manager?: EntityManager): Promise<Card> {
     this.validateExpirationDate(dto.expirationDate);
 
-    const existingCard = await this.cardRepository.findOne({
+    const repo = manager?.getRepository(Card) ?? this.cardRepository;
+
+    const existingCard = await repo.findOne({
       where: {
         lastFourNumbers: dto.lastFourNumbers,
         holderName: dto.holderName,
@@ -28,15 +30,9 @@ export class CardService {
 
     if (existingCard) return existingCard;
 
-    const newCard = this.cardRepository.create({
-      lastFourNumbers: dto.lastFourNumbers,
-      holderName: dto.holderName,
-      expirationDate: dto.expirationDate,
-      method: dto.method,
-      cvv: dto.cvv,
-    });
+    const newCard = repo.create(dto);
 
-    return this.cardRepository.save(newCard);
+    return repo.save(newCard);
   }
 
   calculateBillingData(
