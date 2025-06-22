@@ -15,6 +15,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: transactions
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'     # Limita a 25% de un CPU
+          memory: 256M     # Limita a 256 MB de RAM
   api:
     build:
       context: .
@@ -33,3 +38,21 @@ services:
       DB_DATABASE: transactions
       ENV: DEV
     command: sh -c "npm run migration:run && npm start"
+  datadog:
+    image: datadog/agent:latest
+    environment:
+      - DD_API_KEY=
+      - DD_SITE=us5.datadoghq.com
+      - DD_APM_ENABLED=true
+      - DD_LOGS_ENABLED=true
+      - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+      - DD_DATABASE_MONITORING_ENABLED=true
+      - DD_ENV=dev
+      - DD_SERVICE=merchant-transactions-api
+    ports:
+      - "8126:8126"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./conf.d/postgres.d:/etc/datadog-agent/conf.d/postgres.d
+volumes:
+  pgadmin-data:
