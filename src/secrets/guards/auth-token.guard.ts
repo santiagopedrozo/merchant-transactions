@@ -1,27 +1,32 @@
 import {
-    Injectable,
-    CanActivate,
-    ExecutionContext,
-    UnauthorizedException, Inject,
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  Inject,
 } from '@nestjs/common';
-import {SecretsService} from "../../secrets/secrets.service";
+import { SecretsService } from '../secrets.service';
+import { Request } from 'express';
 
 @Injectable()
 export class AuthTokenGuard implements CanActivate {
-    constructor(
-        @Inject(SecretsService) private secretsService: SecretsService
-    ) {
+  constructor(@Inject(SecretsService) private secretsService: SecretsService) {}
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<Request>();
+    const token = request.headers['auth_token'] as string | undefined;
+
+    if (typeof token !== 'string') {
+      throw new UnauthorizedException('Missing or invalid auth token header');
     }
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        const token = request.headers['auth_token'];
 
-        const authToken: string = await this.secretsService.getSecret('AUTH_TOKEN')
+    const authToken: string = this.secretsService.getSecret(
+      'AUTH_TOKEN',
+    ) as string;
 
-        if (token !== authToken) {
-            throw new UnauthorizedException('Invalid auth token');
-        }
-
-        return true;
+    if (token !== authToken) {
+      throw new UnauthorizedException('Invalid auth token');
     }
+
+    return true;
+  }
 }
