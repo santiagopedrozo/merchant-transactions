@@ -2,15 +2,25 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../../src/app.module';
-import {DataSource, Repository} from 'typeorm';
-import {AllExceptionsHttpFilter} from "../../../src/shared/filters/all-exceptions-http.filter";
-import {Receivable} from "../../../src/receivables/entities/receivable.entity";
-import {getRepositoryToken} from "@nestjs/typeorm";
+import { DataSource, Repository } from 'typeorm';
+import { AllExceptionsHttpFilter } from '../../../src/shared/filters/all-exceptions-http.filter';
+import { Receivable } from '../../../src/receivables/entities/receivable.entity';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { SecretsService } from '../../../src/secrets/secrets.service';
+
+interface TransactionResponse {
+  id: number;
+  value: number;
+  description: string;
+  message: string;
+}
 
 describe('TransactionController (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let receivableRepository: Repository<Receivable>;
+  let authToken: string;
+  let secretsService: SecretsService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -27,19 +37,29 @@ describe('TransactionController (e2e)', () => {
       }),
     );
 
+    secretsService = moduleFixture.get<SecretsService>(SecretsService);
+
+    authToken = secretsService.getSecret('AUTH_TOKEN');
+
     dataSource = moduleFixture.get(DataSource);
 
     await app.init();
 
     receivableRepository = moduleFixture.get<Repository<Receivable>>(
-        getRepositoryToken(Receivable),
+      getRepositoryToken(Receivable),
     );
   });
 
   afterEach(async () => {
-    await dataSource.query(`TRUNCATE TABLE "receivables" RESTART IDENTITY CASCADE`);
-    await dataSource.query(`TRUNCATE TABLE "transactions" RESTART IDENTITY CASCADE`);
-    await dataSource.query(`TRUNCATE TABLE "merchants" RESTART IDENTITY CASCADE`);
+    await dataSource.query(
+      `TRUNCATE TABLE "receivables" RESTART IDENTITY CASCADE`,
+    );
+    await dataSource.query(
+      `TRUNCATE TABLE "transactions" RESTART IDENTITY CASCADE`,
+    );
+    await dataSource.query(
+      `TRUNCATE TABLE "merchants" RESTART IDENTITY CASCADE`,
+    );
     await dataSource.query(`TRUNCATE TABLE "cards" RESTART IDENTITY CASCADE`);
   });
 
@@ -49,47 +69,48 @@ describe('TransactionController (e2e)', () => {
 
   it('should create a CREDIT transaction and verify receivable', async () => {
     await request(app.getHttpServer())
-        .post('/merchant')
-        .send('tienda nube');
+      .post('/merchant')
+      .set('auth_token', authToken)
+      .send({ merchantName: 'tienda nube' });
 
     const payload = {
       merchantId: 1,
       subtotal: 100,
-      description: "Credit test",
-      method: "CREDIT",
-      cardHolderName: "John Doe",
-      cardNumber: "343893520252758",
-      cardExpirationDate: "12/26",
-      cardCvv: 123
+      description: 'Credit test',
+      method: 'CREDIT',
+      cardHolderName: 'John Doe',
+      cardNumber: '343893520252758',
+      cardExpirationDate: '12/26',
+      cardCvv: 123,
     };
 
     const res = await request(app.getHttpServer())
-        .post('/transaction')
-        .send(payload)
-        .expect(201);
+      .post('/transaction')
+      .set('auth_token', authToken)
+      .send(payload)
+      .expect(201);
 
-    expect(res.body).toEqual(
-        expect.objectContaining({
-          value: 96,
-          description: 'Credit test',
-        }),
+    const body = res.body as TransactionResponse;
+
+    expect(body).toEqual(
+      expect.objectContaining({
+        value: 96,
+        description: 'Credit test',
+      }),
     );
 
     const receivable = await receivableRepository.findOne({
-      where: { transactionId: res.body.id },
+      where: { transactionId: body.id },
     });
 
-    if(receivable){
+    if (receivable) {
       expect(receivable).toBeDefined();
       expect(receivable.status).toBe('WAITING_FUNDS');
-
     }
   });
 
   it('should create a DEBIT transaction and verify receivable with decimals', async () => {
-    await request(app.getHttpServer())
-        .post('/merchant')
-        .send('tienda nube');
+    await request(app.getHttpServer()).post('/merchant').set('auth_token', authToken).send('tienda nube');
 
     const payload = {
       merchantId: 1,
@@ -104,18 +125,21 @@ describe('TransactionController (e2e)', () => {
 
     const expectedNetAmount = +(payload.subtotal * 0.98).toFixed(2); // 2% fee
     const res = await request(app.getHttpServer())
-        .post('/transaction')
-        .send(payload)
-        .expect(201);
+      .post('/transaction')
+      .set('auth_token', authToken)
+      .send(payload)
+      .expect(201);
 
-    expect(res.body.description).toBe('Debit test with decimal');
-    expect(Math.abs(res.body.value - expectedNetAmount)).toBeLessThanOrEqual(0.01);
+    const body = res.body as TransactionResponse;
+
+    expect(body.description).toBe('Debit test with decimal');
+    expect(Math.abs(body.value - expectedNetAmount)).toBeLessThanOrEqual(0.01);
 
     const receivable = await receivableRepository.findOne({
-      where: { transactionId: res.body.id },
+      where: { transactionId: body.id },
     });
 
-    if(receivable){
+    if (receivable) {
       expect(receivable).toBeDefined();
       expect(receivable.status).toBe('PAID');
     }
@@ -123,8 +147,9 @@ describe('TransactionController (e2e)', () => {
 
   it('should reject a transaction with an expired card', async () => {
     await request(app.getHttpServer())
-        .post('/merchant')
-        .send('tienda nube');
+      .post('/merchant')
+      .set('auth_token', authToken)
+      .send('tienda nube');
 
     const payload = {
       merchantId: 1,
@@ -139,10 +164,11 @@ describe('TransactionController (e2e)', () => {
 
     const res = await request(app.getHttpServer())
         .post('/transaction')
-        .send(payload)
+        .send(payload).set('auth_token', authToken)
         .expect(400);
 
-    expect(res.body.message).toContain('Card is expired');
-  });
+    const body = res.body as TransactionResponse;
 
+    expect(body.message).toContain('Card is expired');
+  });
 });

@@ -30,10 +30,13 @@ export class AllExceptionsHttpFilter implements ExceptionFilter {
     }
   }
 
-  private extractMessage(response: any): string | string[] {
+  private extractMessage(
+    response: string | { message?: string | string[] },
+  ): string | string[] {
     if (typeof response === 'string') return response;
-    if (typeof response === 'object' && response.message)
+    if (typeof response === 'object' && response.message) {
       return response.message;
+    }
     return 'Unexpected error';
   }
 }

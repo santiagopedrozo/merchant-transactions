@@ -1,16 +1,27 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ReceivablesService } from './receivables.service';
 import {
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiResponse,
+  ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
 import { GetReceivableDto } from './dto/get-receivable.dto';
+import { AuthTokenGuard } from '../secrets/guards/auth-token.guard';
 
 @ApiTags('Receivables')
 @Controller('receivables')
+@ApiSecurity('auth_token')
+@UseGuards(AuthTokenGuard)
 export class ReceivablesController {
   constructor(private readonly receivablesService: ReceivablesService) {}
 
@@ -28,7 +39,7 @@ export class ReceivablesController {
   async getByMerchant(@Param('merchantId', ParseIntPipe) merchantId: number) {
     const receivables =
       await this.receivablesService.getReceivablesByMerchant(merchantId);
-    return receivables.map(GetReceivableDto.fromEntity);
+    return receivables.map((r) => GetReceivableDto.fromEntity(r));
   }
 
   @Get('/total')

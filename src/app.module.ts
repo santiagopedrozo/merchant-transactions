@@ -6,6 +6,7 @@ import { TransactionModule } from './transaction/transaction.module';
 import { ReceivablesModule } from './receivables/receivables.module';
 import { getTypeOrmModuleFactory } from './shared/typeorm/typeorm.module.factory';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SecretsModule } from './secrets/secrets.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     CardModule,
     TransactionModule,
     ReceivablesModule,
+    SecretsModule,
   ],
   providers: [],
   exports: [],
