@@ -1,11 +1,20 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { GetTransactionDto } from './dto/get-transaction.dto';
+import { AuthTokenGuard } from '../secrets/guards/auth-token.guard';
 
 @ApiTags('Transactions')
 @Controller('transaction')
+@ApiSecurity('auth_token')
+@UseGuards(AuthTokenGuard)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 

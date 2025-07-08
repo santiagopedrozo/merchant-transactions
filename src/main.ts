@@ -37,4 +37,4 @@ async function bootstrap() {
   await app.listen(port);
 }
 
-bootstrap();
+bootstrap().catch((e: any) => `error during app boostrap ${e}`);

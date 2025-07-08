@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Receivable } from './entities/receivable.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import {EntityManager, Repository} from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CreateReceivableDto } from './dto/create-receivable.dto';
 
 @Injectable()
@@ -11,8 +11,12 @@ export class ReceivablesService {
     private readonly receivableRepository: Repository<Receivable>,
   ) {}
 
-  async create(dto: CreateReceivableDto, manager?: EntityManager): Promise<Receivable> {
-    const repo = manager?.getRepository(Receivable) ?? this.receivableRepository;
+  async create(
+    dto: CreateReceivableDto,
+    manager?: EntityManager,
+  ): Promise<Receivable> {
+    const repo =
+      manager?.getRepository(Receivable) ?? this.receivableRepository;
 
     const receivable = new Receivable();
 
@@ -63,15 +67,16 @@ export class ReceivablesService {
       ),
     );
 
-    const result = await this.receivableRepository
-      .createQueryBuilder('receivable')
-      .select('SUM(receivable.total)', 'total')
-      .where('receivable.scheduledPaymentDate BETWEEN :start AND :end', {
-        start,
-        end,
-      })
-      .getRawOne();
+    const result: { total: string | null } | undefined =
+      await this.receivableRepository
+        .createQueryBuilder('receivable')
+        .select('SUM(receivable.total)', 'total')
+        .where('receivable.scheduledPaymentDate BETWEEN :start AND :end', {
+          start,
+          end,
+        })
+        .getRawOne();
 
-    return parseFloat(result.total) || 0;
+    return parseFloat(result?.total ?? '0') || 0;
   }
 }

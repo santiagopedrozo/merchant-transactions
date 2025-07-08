@@ -1,8 +1,18 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { MerchantService } from './merchant.service';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
+import { AuthTokenGuard } from '../secrets/guards/auth-token.guard';
 
+@ApiTags('merchant')
 @Controller('merchant')
+@ApiSecurity('auth_token')
+@UseGuards(AuthTokenGuard)
 export class MerchantController {
   constructor(private readonly merchantService: MerchantService) {}
 

@@ -6,6 +6,7 @@ import { CardModule } from '../card/card.module';
 import { Transaction } from './entities/transaction.entity';
 import { ReceivablesModule } from '../receivables/receivables.module';
 import { MerchantModule } from '../merchant/merchant.module';
+import { SecretsModule } from '../secrets/secrets.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { MerchantModule } from '../merchant/merchant.module';
     CardModule,
     ReceivablesModule,
     MerchantModule,
+    SecretsModule,
   ],
   controllers: [TransactionController],
   providers: [TransactionService],

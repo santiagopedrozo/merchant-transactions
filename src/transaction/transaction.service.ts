@@ -19,7 +19,9 @@ export class TransactionService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createTransactionDto: CreateTransactionDto): Promise<Transaction> {
+  async create(
+    createTransactionDto: CreateTransactionDto,
+  ): Promise<Transaction> {
     const queryRunner = this.dataSource.createQueryRunner();
 
     await queryRunner.connect();
@@ -27,26 +29,29 @@ export class TransactionService {
 
     try {
       const foundMerchant = await this.merchantService.findById(
-          createTransactionDto.merchantId,
+        createTransactionDto.merchantId,
       );
 
       if (!foundMerchant) {
         throw new NotFoundException(
-            `Merchant with id ${createTransactionDto.merchantId} not found`,
+          `Merchant with id ${createTransactionDto.merchantId} not found`,
         );
       }
 
-      const foundCard = await this.cardService.createOrFind({
-        lastFourNumbers: +createTransactionDto.cardNumber.slice(-4),
-        holderName: createTransactionDto.cardHolderName,
-        expirationDate: createTransactionDto.cardExpirationDate,
-        method: createTransactionDto.method,
-        cvv: createTransactionDto.cardCvv,
-      }, queryRunner.manager); // <- pasar el manager aquí
+      const foundCard = await this.cardService.createOrFind(
+        {
+          lastFourNumbers: +createTransactionDto.cardNumber.slice(-4),
+          holderName: createTransactionDto.cardHolderName,
+          expirationDate: createTransactionDto.cardExpirationDate,
+          method: createTransactionDto.method,
+          cvv: createTransactionDto.cardCvv,
+        },
+        queryRunner.manager,
+      ); // <- pasar el manager aquí
 
       const billingCalculation = this.cardService.calculateBillingData(
-          createTransactionDto.subtotal,
-          createTransactionDto.method,
+        createTransactionDto.subtotal,
+        createTransactionDto.method,
       );
 
       const transactionToSave = this.transactionRepository.create({
@@ -58,14 +63,17 @@ export class TransactionService {
 
       const transaction = await queryRunner.manager.save(transactionToSave);
 
-      await this.receivableService.create({
-        status: billingCalculation.status,
-        scheduledPaymentDate: billingCalculation.paymentDate.toDateString(),
-        subtotal: createTransactionDto.subtotal,
-        discount: billingCalculation.feeAmount,
-        total: billingCalculation.total,
-        transactionId: transaction.id,
-      }, queryRunner.manager);
+      await this.receivableService.create(
+        {
+          status: billingCalculation.status,
+          scheduledPaymentDate: billingCalculation.paymentDate.toDateString(),
+          subtotal: createTransactionDto.subtotal,
+          discount: billingCalculation.feeAmount,
+          total: billingCalculation.total,
+          transactionId: transaction.id,
+        },
+        queryRunner.manager,
+      );
 
       await queryRunner.commitTransaction();
 
