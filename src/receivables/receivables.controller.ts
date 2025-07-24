@@ -1,6 +1,7 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import {Body, Controller, Get, Param, ParseIntPipe, Post, Query} from '@nestjs/common';
 import { ReceivablesService } from './receivables.service';
 import {
+  ApiBody,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -8,6 +9,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { GetReceivableDto } from './dto/get-receivable.dto';
+import {UpdateMerchantReceivablesFeeDto} from "./dto/update-merchant-receivables-fee.dto";
+import {BulkUpdateResponseDto} from "./dto/bulk-update-response.dto";
 
 @ApiTags('Receivables')
 @Controller('receivables')
@@ -49,4 +52,17 @@ export class ReceivablesController {
       ),
     };
   }
+
+  @Post('/recalculate-receivables')
+  @ApiOperation({ summary: 'Recalculate receivables subtotal by merchant' })
+  @ApiResponse({ status: 200, description: 'Receivables affected', type: BulkUpdateResponseDto })
+  @ApiBody({
+    type: UpdateMerchantReceivablesFeeDto,
+  })
+  async recalculateMerchantReceivableFee(
+      @Body() dto: UpdateMerchantReceivablesFeeDto
+  ): Promise<BulkUpdateResponseDto> {
+    return this.receivablesService.findAndProcessPendingSubtotalFromMerchant(dto.merchantId, dto.feePercent)
+  }
+
 }
