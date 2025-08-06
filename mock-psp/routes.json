@@ -1,0 +1,6 @@
+{
+  "/v1/payment_intents": "/payments",
+  "/v1/payment_intents/*": "/payments/$1",
+  "/v1/webhooks": "/webhooks",
+  "/v1/refunds": "/refunds"
+}

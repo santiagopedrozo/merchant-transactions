@@ -1,0 +1,47 @@
+{
+  "payments": [
+    {
+      "id": "pay_1",
+      "amount": 10000,
+      "currency": "usd",
+      "status": "succeeded",
+      "payment_method": {
+        "type": "card",
+        "card": {
+          "brand": "visa",
+          "last4": "4242",
+          "exp_month": 12,
+          "exp_year": 2025
+        }
+      },
+      "metadata": {
+        "merchant_id": "1",
+        "domain_payment_id": "domain_pay_1"
+      },
+      "created": 1640995200,
+      "description": "Test payment"
+    }
+  ],
+  "webhooks": [
+    {
+      "id": "evt_1",
+      "type": "payment.succeeded",
+      "data": {
+        "object": {
+          "id": "pay_1",
+          "status": "succeeded"
+        }
+      },
+      "created": 1640995200
+    }
+  ],
+  "refunds": [
+    {
+      "id": "re_1",
+      "payment_id": "pay_1",
+      "amount": 5000,
+      "status": "succeeded",
+      "created": 1640995300
+    }
+  ]
+}

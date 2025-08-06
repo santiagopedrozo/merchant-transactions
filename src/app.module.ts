@@ -4,6 +4,7 @@ import { MerchantModule } from './merchant/merchant.module';
 import { CardModule } from './card/card.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { ReceivablesModule } from './receivables/receivables.module';
+import { PaymentModule } from './payment/payment.module';
 import { getTypeOrmModuleFactory } from './shared/typeorm/typeorm.module.factory';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SecretsModule } from './secrets/secrets.module';
@@ -24,6 +25,7 @@ import { SecretsModule } from './secrets/secrets.module';
     CardModule,
     TransactionModule,
     ReceivablesModule,
+    PaymentModule,
     SecretsModule,
   ],
   providers: [],
